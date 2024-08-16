@@ -95,6 +95,7 @@ export const addToCart = async (req: Request, res: Response) => {
 
 export const removeFromCart = async (req: Request, res: Response) => {
   const { cartId } = req.params;
+  const { userId } = req.body;
 
   try {
     const cart = await db.cart.delete({
@@ -102,7 +103,18 @@ export const removeFromCart = async (req: Request, res: Response) => {
       select: { id: true },
     });
 
-    return res.status(200).json(cart);
+    const carts = await db.cart.findMany({
+      where: { userId },
+      include: { toy: true },
+    });
+
+    let sum = 0;
+
+    for (let i = 0; i < carts.length; i++) {
+      sum += carts[i].toy.price * carts[i].quantity;
+    }
+
+    return res.status(200).json({ cart, subtitle: sum });
   } catch (error) {
     return res.status(500).json("Internal server error");
   }
